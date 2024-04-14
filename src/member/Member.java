@@ -12,7 +12,6 @@ import javax.swing.table.TableModel;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.*;
-import java.util.Objects;
 
 import static javax.swing.JOptionPane.showMessageDialog;
 
@@ -20,12 +19,21 @@ public interface Member {
     boolean SignIn(String username, String password);
 
     default boolean add(Student p) {
-        try {
-            Connection con = JDBCUtils.getConnection();
-            Statement sql = con.createStatement();
-            ResultSet set = sql.executeQuery("select * from simsdb.student where username=" + "'" + p.getUsername() + "'");
-            if (!set.next()) {
-                sql.executeUpdate("insert into simsdb.student values " + "(" + "'" + p.getUsername() + "'" + "," + "'" + p.getPassword() + "'" + "," + "'" + p.getName() + "'" + "," + "'" + p.getSex() + "'" + "," + "'" + p.getCollege() + "'" + "," + "'" + p.getGradeClass() + "'" + ")");
+        try (Connection con = JDBCUtils.getConnection();
+             PreparedStatement statement = con.prepareStatement("SELECT * FROM simsdb.student WHERE username = ?");
+             ResultSet resultSet = statement.executeQuery()) {
+
+            statement.setString(1, p.getUsername());
+            if (!resultSet.next()) {
+                try (PreparedStatement insertStatement = con.prepareStatement("INSERT INTO simsdb.student VALUES (?, ?, ?, ?, ?, ?)")) {
+                    insertStatement.setString(1, p.getUsername());
+                    insertStatement.setString(2, p.getPassword());
+                    insertStatement.setString(3, p.getName());
+                    insertStatement.setString(4, p.getSex());
+                    insertStatement.setString(5, p.getCollege());
+                    insertStatement.setString(6, p.getGradeClass());
+                    insertStatement.executeUpdate();
+                }
                 return true;
             } else {
                 return false;
@@ -36,23 +44,31 @@ public interface Member {
     }
 
     default boolean delete(String name) {
-        try {
-            Connection con = JDBCUtils.getConnection();
-            Statement sql = con.createStatement();
-            int row = sql.executeUpdate("delete from simsdb.student where name = " + "'" + name + "'");
-            return row != 0;
+        try (Connection con = JDBCUtils.getConnection();
+             PreparedStatement statement = con.prepareStatement("DELETE FROM simsdb.student WHERE name = ?")) {
+            statement.setString(1, name);
+            int rowsDeleted = statement.executeUpdate();
+            return rowsDeleted != 0;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
     default Student find(String name) {
-        try {
-            Connection con = JDBCUtils.getConnection();
-            Statement sql = con.createStatement();
-            ResultSet set = sql.executeQuery("select * from simsdb.student where name=" + "'" + name + "'");
-            if (set.next()) {
-                return new Student(set.getString("username"), set.getString("password"), set.getString("name"), set.getString("sex"), set.getString("college"), set.getString("gradeClass"));
+        try (Connection con = JDBCUtils.getConnection();
+             PreparedStatement statement = con.prepareStatement("SELECT * FROM simsdb.student WHERE name = ?")) {
+            statement.setString(1, name);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new Student(
+                            resultSet.getString("username"),
+                            resultSet.getString("password"),
+                            resultSet.getString("name"),
+                            resultSet.getString("sex"),
+                            resultSet.getString("college"),
+                            resultSet.getString("gradeClass")
+                    );
+                }
             }
             return null;
         } catch (SQLException e) {
@@ -61,17 +77,21 @@ public interface Member {
     }
 
     default void alter(Student p) {
-        try {
-            Connection con = JDBCUtils.getConnection();
-            Statement sql = con.createStatement();
-            sql.executeUpdate("update simsdb.student set name = " + "'" + p.getName() + "'" + " where username = " + "'" + p.getUsername() + "'");
-            sql.executeUpdate("update simsdb.student set gradeClass = " + "'" + p.getGradeClass() + "'" + " where username = " + "'" + p.getUsername() + "'");
-            sql.executeUpdate("update simsdb.student set college = " + "'" + p.getCollege() + "'" + " where username = " + "'" + p.getUsername() + "'");
-            sql.executeUpdate("update simsdb.student set sex = " + "'" + p.getSex() + "'" + " where username = " + "'" + p.getUsername() + "'");
+        try (Connection con = JDBCUtils.getConnection();
+             PreparedStatement statement = con.prepareStatement("UPDATE simsdb.student SET name = ?, gradeClass = ?, college = ?, sex = ? WHERE username = ?")) {
+
+            statement.setString(1, p.getName());
+            statement.setString(2, p.getGradeClass());
+            statement.setString(3, p.getCollege());
+            statement.setString(4, p.getSex());
+            statement.setString(5, p.getUsername());
+
+            statement.executeUpdate();
         } catch (SQLException ex) {
             showMessageDialog(new JOptionPane(), "数据处理异常", "警告", JOptionPane.WARNING_MESSAGE);
         }
     }
+
 
     default String[][] print() {
         try {
@@ -98,16 +118,16 @@ public interface Member {
         return null;
     }
 
-    default boolean ChangePassword(Student s, String password, String username) {
-        try {
-            Connection con = JDBCUtils.getConnection();
-            Statement sql = con.createStatement();
-            ResultSet set = sql.executeQuery("select * from simsdb.student where username=" + "'" + username + "'");
-            if (!set.next() || Objects.equals(s.getUsername(), username)) {
-                sql.executeUpdate("update simsdb.student set username = " + "'" + username + "'" + " where name = " + "'" + s.getName() + "'");
-                sql.executeUpdate("update simsdb.student set password = " + "'" + password + "'" + " where name = " + "'" + s.getName() + "'");
-                return true;
-            }
+    default boolean changePassword(Student s, String password, String username) {
+        try (Connection con = JDBCUtils.getConnection();
+             PreparedStatement statement = con.prepareStatement("UPDATE simsdb.student SET username = ?, password = ? WHERE name = ?")) {
+
+            statement.setString(1, username);
+            statement.setString(2, password);
+            statement.setString(3, s.getName());
+
+            statement.executeUpdate();
+            return true;
         } catch (SQLException e) {
             showMessageDialog(new JOptionPane(), "数据处理异常", "警告", JOptionPane.WARNING_MESSAGE);
         }

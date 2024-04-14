@@ -10,7 +10,6 @@ import static javax.swing.JOptionPane.showMessageDialog;
 
 public class Student implements Member {
     private Connection con;
-    private Statement sql;
     private String username;
     private String password;
     private String name;
@@ -27,7 +26,6 @@ public class Student implements Member {
         this.gradeClass = gradeClass;
         try {
             con = JDBCUtils.getConnection();
-            sql = con.createStatement();
         } catch (SQLException e) {
             showMessageDialog(new JOptionPane(), "数据库异常", "警告", JOptionPane.WARNING_MESSAGE);
         }
@@ -37,7 +35,6 @@ public class Student implements Member {
         super();
         try {
             con = JDBCUtils.getConnection();
-            sql = con.createStatement();
         } catch (SQLException e) {
             showMessageDialog(new JOptionPane(), "数据库异常", "警告", JOptionPane.WARNING_MESSAGE);
         }
@@ -48,7 +45,6 @@ public class Student implements Member {
         this.password = password;
         try {
             con = JDBCUtils.getConnection();
-            sql = con.createStatement();
         } catch (SQLException e) {
             showMessageDialog(new JOptionPane(), "数据库异常", "警告", JOptionPane.WARNING_MESSAGE);
         }

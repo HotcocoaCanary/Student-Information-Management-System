@@ -9,7 +9,6 @@ import java.sql.*;
 import static javax.swing.JOptionPane.showMessageDialog;
 
 public class Administrator extends Student implements Member {
-    private Statement sql;
     private Connection con;
 
     public Administrator(String username, String password) {
@@ -25,7 +24,6 @@ public class Administrator extends Student implements Member {
     private void initAdministrator() {
         try {
             con = JDBCUtils.getConnection();
-            sql = con.createStatement();
         } catch (SQLException e) {
             showMessageDialog(new JOptionPane(), "数据库异常", "警告", JOptionPane.WARNING_MESSAGE);
         }

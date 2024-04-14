@@ -72,7 +72,7 @@ public class ChangePassword extends JFrame {
             if (Arrays.equals(cip2.getPassword(), cip3.getPassword())) {
                 if (new Student().find(s.getName()) != null) {
                     if (Arrays.equals(new Student().find(s.getName()).getPassword().toCharArray(), cip1.getPassword())) {
-                        if (new Student().ChangePassword(s, new String(cip2.getPassword()), use.getText())) {
+                        if (new Student().changePassword(s, new String(cip2.getPassword()), use.getText())) {
                             showMessageDialog(this, "修改成功", "提示", JOptionPane.INFORMATION_MESSAGE);
                             dispose();
                         } else {
